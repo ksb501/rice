@@ -1,3 +1,24 @@
+// 글로벌 HTML 파일 다운로드 헬퍼 (단일 파일 평생 소장 및 오프라인 보관 지원)
+if (!window.downloadHtmlFile) {
+    window.downloadHtmlFile = function(filename, htmlContent) {
+        try {
+            const blob = new Blob(['\uFEFF' + htmlContent], { type: 'text/html;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 1500);
+            return true;
+        } catch (err) {
+            console.error('HTML 파일 다운로드 실패:', err);
+            return false;
+        }
+    };
+}
+
 // 메인 애플리케이션 제어기 (타임어택, 7대 도구 연동, 기록 관리)
 class RiceGameApp {
     constructor() {
@@ -431,6 +452,275 @@ class RiceGameApp {
         if (window.effectMgr) window.effectMgr.createGoldSparkles();
     }
 
+    // 꼬마 농부 명예 수료증을 독립 HTML 파일로 내보내기
+    saveCertAsHtml() {
+        const p = this.getUserProfile();
+        const school = (document.getElementById('certUserSchool')?.value || '').trim() || p.school;
+        const grade = (document.getElementById('certUserGrade')?.value || '').trim() || p.grade;
+        const name = (document.getElementById('certUserName')?.value || '').trim() || p.name;
+        const medal = (document.getElementById('certMedalText')?.innerText || '').trim() || '🥇 금벼 메달';
+        const timeText = (document.getElementById('certTimeText')?.innerText || '').trim() || '01분 05초';
+
+        const safeSchool = school.replace(/[\\/:*?"<>|]/g, '_');
+        const safeName = name.replace(/[\\/:*?"<>|]/g, '_');
+        const filename = `꼬마농부_명예수료증_${safeSchool}_${safeName}.html`;
+
+        const today = new Date();
+        const dateString = `${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일`;
+        const issuerSchool = school.endsWith('학교') ? `${school}장` : (school.endsWith('초등') ? `${school}학교장` : `${school}장`);
+
+        const htmlContent = `<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>꼬마 농부 명예 수료증 - ${name}</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700;900&family=Nanum+Gothic:wght@400;700;800&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #F5F0EB;
+    font-family: 'Noto Serif KR', 'Batang', 'Gungsuh', serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 30px 16px;
+    min-height: 100vh;
+    color: #212121;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .no-print-toolbar {
+    background: #FFFFFF;
+    padding: 12px 26px;
+    border-radius: 50px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+    display: flex;
+    gap: 14px;
+    margin-bottom: 26px;
+    font-family: 'Nanum Gothic', sans-serif;
+    align-items: center;
+  }
+  .toolbar-tip {
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: #2E7D32;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .tool-btn {
+    padding: 9px 20px;
+    border: none;
+    border-radius: 25px;
+    font-weight: 800;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn-print { background: #2E7D32; color: #FFF; }
+  .btn-print:hover { background: #1B5E20; transform: translateY(-1px); }
+  .btn-close { background: #ECEFF1; color: #455A64; }
+  .btn-close:hover { background: #CFD8DC; }
+
+  .cert-wrapper {
+    width: 100%;
+    max-width: 660px;
+    padding: 14px;
+    background: #EFE8DE;
+    border-radius: 18px;
+    box-shadow: 0 12px 36px rgba(0,0,0,0.14);
+  }
+  .cert-card {
+    background: #FFFEFA;
+    border: 7px double #D4AF37;
+    border-radius: 12px;
+    padding: 46px 40px 38px;
+    position: relative;
+    box-shadow: inset 0 0 25px rgba(212, 175, 55, 0.12);
+    text-align: center;
+  }
+  .cert-badge {
+    font-size: 3.6rem;
+    margin-bottom: 8px;
+  }
+  .cert-title {
+    font-size: 2.7rem;
+    font-weight: 900;
+    letter-spacing: 0.25em;
+    text-indent: 0.25em;
+    color: #2E7D32;
+    margin-bottom: 6px;
+  }
+  .cert-sub-title {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: #E65100;
+    letter-spacing: 0.1em;
+    margin-bottom: 24px;
+  }
+  .cert-recipient {
+    margin: 18px 0 24px;
+    font-size: 1.25rem;
+    line-height: 1.9;
+  }
+  .cert-recipient .student-name {
+    font-size: 1.55rem;
+    font-weight: 900;
+    color: #B71C1C;
+    text-decoration: underline;
+    text-underline-offset: 5px;
+  }
+  .cert-body-text {
+    font-size: 1.08rem;
+    line-height: 2.05;
+    color: #3E2723;
+    margin: 20px 0 24px;
+    padding: 0 10px;
+    word-break: keep-all;
+  }
+  .cert-record-box {
+    background: #FFF8E1;
+    border: 2px dashed #FFB300;
+    border-radius: 14px;
+    padding: 16px;
+    margin: 20px 10px;
+    font-family: 'Nanum Gothic', sans-serif;
+  }
+  .cert-record-medal {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #E65100;
+  }
+  .cert-record-time {
+    font-size: 2rem;
+    font-weight: 900;
+    color: #2E7D32;
+    margin: 4px 0;
+  }
+  .cert-bottom-area {
+    margin-top: 28px;
+  }
+  .cert-date {
+    font-size: 1.05rem;
+    color: #5D4037;
+    margin-bottom: 18px;
+    font-weight: 600;
+  }
+  .cert-issuer-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+  }
+  .cert-issuer-name {
+    font-size: 1.6rem;
+    font-weight: 900;
+    color: #212121;
+    letter-spacing: 0.08em;
+  }
+  .cert-seal-stamp {
+    width: 60px;
+    height: 60px;
+    border: 4px solid #D32F2F;
+    color: #D32F2F;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.92rem;
+    font-weight: 900;
+    line-height: 1.15;
+    text-align: center;
+    letter-spacing: 1px;
+    transform: rotate(-6deg);
+    border-radius: 5px;
+    box-shadow: 0 0 5px rgba(211, 47, 47, 0.4);
+    background: #FFF8F8;
+  }
+
+  @media print {
+    body {
+      background: none;
+      padding: 0;
+    }
+    .no-print-toolbar {
+      display: none !important;
+    }
+    .cert-wrapper {
+      max-width: 100%;
+      background: none;
+      box-shadow: none;
+      padding: 0;
+      border-radius: 0;
+    }
+    .cert-card {
+      border: 6px double #D4AF37;
+      box-shadow: none;
+      padding: 38px 28px;
+      page-break-inside: avoid;
+    }
+    @page {
+      size: A4 portrait;
+      margin: 15mm;
+    }
+  }
+</style>
+</head>
+<body>
+  <div class="no-print-toolbar">
+    <span class="toolbar-tip">🎖️ 꼬마 농부 수료증이 HTML 파일로 저장되었습니다!</span>
+    <button class="tool-btn btn-print" onclick="window.print()">🖨️ 수료증 인쇄 / PDF 저장</button>
+    <button class="tool-btn btn-close" onclick="window.close()">✕ 닫기</button>
+  </div>
+  <div class="cert-wrapper">
+    <div class="cert-card">
+      <div class="cert-badge">🎖️</div>
+      <h1 class="cert-title">수&nbsp;&nbsp;료&nbsp;&nbsp;증</h1>
+      <div class="cert-sub-title">[ 자랑스러운 꼬마 농부 명예 수료증 ]</div>
+      <div class="cert-recipient">
+        <div>소속: <strong>${school} ${grade}</strong></div>
+        <div>성명: <span class="student-name">${name}</span></div>
+      </div>
+      <div class="cert-body-text">
+        위 어린이는 벼의 요구사항을 귀 기울여 들으며<br>
+        사랑과 정성으로 벼를 가꾸고, 건조와 도정(왕겨➔현미➔백미)을 거쳐<br>
+        맛있는 가마솥 쌀밥을 훌륭히 완성하였으므로<br>
+        <strong>[자랑스러운 꼬마 농부]</strong>로 인정하며 본 수료증을 수여합니다.
+      </div>
+      <div class="cert-record-box">
+        <div class="cert-record-medal">${medal}</div>
+        <div class="cert-record-time">${timeText}</div>
+        <div style="font-size: 0.9rem; color: #757575;">사랑과 정성으로 가꾼 황금벼 수확 성공!</div>
+      </div>
+      <div class="cert-bottom-area">
+        <div class="cert-date">${dateString}</div>
+        <div class="cert-issuer-row">
+          <span class="cert-issuer-name">${issuerSchool}</span>
+          <div class="cert-seal-stamp">영양<br>박사</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+
+        window.downloadHtmlFile(filename, htmlContent);
+        if (window.soundFx) window.soundFx.playPerfect();
+        this.showToast(`💾 [${name}] 수료증이 HTML 파일로 저장되었습니다!`);
+    }
+
+    printCert() {
+        const modal = document.getElementById('certModal');
+        if (modal) modal.classList.add('print-target-modal');
+        window.print();
+        setTimeout(() => {
+            if (modal) modal.classList.remove('print-target-modal');
+        }, 1000);
+    }
+
     updateRecord(entry) {
         try {
             this.saveUserProfile({
@@ -583,6 +873,167 @@ class RiceGameApp {
             if (window.soundFx) window.soundFx.playClick();
             this.loadRecords();
         }
+    }
+
+    // 명예의 전당 순위 기록을 단일 HTML 파일로 내려받기
+    saveRecordsAsHtml() {
+        let records = [];
+        try {
+            records = JSON.parse(localStorage.getItem('rice_growth_records') || '[]');
+        } catch (e) {}
+
+        const today = new Date();
+        const dateString = `${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일`;
+        const filename = `꼬마농부_명예의전당_기록순위표.html`;
+
+        const rowsHtml = records.map((r, i) => {
+            let rankBadge = `${i + 1}위`;
+            if (i === 0) rankBadge = '👑 1위';
+            else if (i === 1) rankBadge = '🥈 2위';
+            else if (i === 2) rankBadge = '🥉 3위';
+
+            return `<tr>
+              <td style="text-align: center; font-weight: 800;">${rankBadge}</td>
+              <td>${r.school || '-'}</td>
+              <td>${r.grade || '-'}</td>
+              <td style="font-weight: 800; color: #2E7D32;">${r.name || '-'}</td>
+              <td style="text-align: center;">${(r.medal || '').split(' ')[0] || '🏅'}</td>
+              <td style="text-align: center; font-weight: 800; color: #E65100;">${r.timeString || '-'}</td>
+              <td style="text-align: center;">${r.attempts || 1}회</td>
+              <td style="text-align: center; font-size: 0.88rem; color: #666;">${r.date || '-'}</td>
+            </tr>`;
+        }).join('');
+
+        const htmlContent = `<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>꼬마 농부 명예의 전당 기록 순위표</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700;800&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #F4F6F8;
+    font-family: 'Nanum Gothic', sans-serif;
+    padding: 30px 20px;
+    color: #333;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .container {
+    max-width: 820px;
+    margin: 0 auto;
+    background: #FFFFFF;
+    border-radius: 16px;
+    padding: 36px 32px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+  }
+  .no-print-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #ECEFF1;
+  }
+  .tool-btn {
+    padding: 9px 20px;
+    border: none;
+    border-radius: 25px;
+    font-weight: 800;
+    font-size: 0.95rem;
+    cursor: pointer;
+    background: #2E7D32;
+    color: #FFF;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .tool-btn:hover {
+    background: #1B5E20;
+  }
+  .title-area {
+    text-align: center;
+    margin-bottom: 28px;
+  }
+  .title-area h1 {
+    font-size: 2rem;
+    color: #1B5E20;
+    margin-bottom: 8px;
+  }
+  .title-area p {
+    color: #666;
+    font-size: 0.95rem;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+  }
+  th {
+    background: #E8F5E9;
+    color: #2E7D32;
+    font-weight: 800;
+    padding: 12px 10px;
+    border-top: 2px solid #81C784;
+    border-bottom: 2px solid #81C784;
+    font-size: 0.95rem;
+    text-align: left;
+  }
+  th:first-child, th:nth-child(5), th:nth-child(6), th:nth-child(7), th:nth-child(8) {
+    text-align: center;
+  }
+  td {
+    padding: 12px 10px;
+    border-bottom: 1px solid #EEEEEE;
+    font-size: 0.95rem;
+  }
+  tr:hover {
+    background: #FAFAFA;
+  }
+  @media print {
+    body { background: none; padding: 0; }
+    .no-print-toolbar { display: none !important; }
+    .container { box-shadow: none; padding: 10px; max-width: 100%; }
+    @page { size: A4 portrait; margin: 15mm 10mm; }
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="no-print-toolbar">
+      <span style="font-weight: 800; color: #2E7D32;">🌾 꼬마 농부 명예의 전당 기록 순위표</span>
+      <button class="tool-btn" onclick="window.print()">🖨️ 인쇄 / PDF 저장</button>
+    </div>
+    <div class="title-area">
+      <h1>🏆 꼬마 농부 명예의 전당 순위표</h1>
+      <p>벼의 한살이 및 6대 가공 공정을 통과한 꼬마 농부들의 도전 기록입니다. (출력일: ${dateString})</p>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>순위</th>
+          <th>학교명</th>
+          <th>학년/반</th>
+          <th>이름</th>
+          <th>메달</th>
+          <th>소요 시간</th>
+          <th>수확 횟수</th>
+          <th>달성일</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rowsHtml}
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>`;
+
+        window.downloadHtmlFile(filename, htmlContent);
+        if (window.soundFx) window.soundFx.playPerfect();
+        this.showToast('💾 명예의 전당 기록 순위표가 HTML 파일로 저장되었습니다!');
     }
 
     openModal(id) {

@@ -411,6 +411,17 @@ class EncyclopediaUI {
         const dateString = `${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일`;
 
         const issuerSchool = school.endsWith('학교') ? `${school}장` : (school.endsWith('초등') ? `${school}학교장` : `${school}장`);
+        const serialNumber = `제 ${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')}-${Math.floor(Math.random() * 900 + 100)}호`;
+
+        // 상장 데이터 보관 (HTML 파일 다운로드용)
+        this.currentAwardData = {
+            serialNumber,
+            school,
+            gradeClass,
+            studentName,
+            dateString,
+            issuerSchool
+        };
 
         const container = document.getElementById('quizContent');
         if (!container) return;
@@ -420,7 +431,7 @@ class EncyclopediaUI {
                 <div class="korean-award-card">
                     <!-- 상단 상장 번호 & 엠블럼 -->
                     <div class="award-top-row">
-                        <span class="award-serial">제 2026-0914호</span>
+                        <span class="award-serial">${serialNumber}</span>
                         <div class="award-emblem">🌾 🎖️ 🌾</div>
                     </div>
 
@@ -430,8 +441,8 @@ class EncyclopediaUI {
 
                     <!-- 수상자 정보 -->
                     <div class="award-recipient-info">
-                        <div class="info-line"><span class="info-label">소&nbsp;&nbsp;&nbsp;&nbsp;속 :</span> <span class="info-val">${school} ${gradeClass}</span></div>
-                        <div class="info-line"><span class="info-label">성&nbsp;&nbsp;&nbsp;&nbsp;명 :</span> <span class="info-val student-highlight">${studentName}</span></div>
+                        <div class="info-line"><span class="info-label">소&nbsp;속</span><span class="info-sep">:</span><span class="info-val">${school} ${gradeClass}</span></div>
+                        <div class="info-line"><span class="info-label">성&nbsp;명</span><span class="info-sep">:</span><span class="info-val student-highlight">${studentName}</span></div>
                     </div>
 
                     <!-- 상장 본문 -->
@@ -453,9 +464,14 @@ class EncyclopediaUI {
                 </div>
             </div>
 
-            <!-- 하단 인쇄 및 제어 버튼 -->
+            <!-- 하단 인쇄 및 HTML 저장 제어 버튼 -->
             <div class="award-action-buttons">
-                <button class="stage-action-btn primary" onclick="window.print()">🖨️ 상장 인쇄하기</button>
+                <button class="stage-action-btn primary btn-html-save" onclick="window.encycloUI.saveAwardAsHtml()" title="내 컴퓨터에 HTML 파일로 평생 보관하기">
+                    💾 HTML 파일로 저장
+                </button>
+                <button class="stage-action-btn btn-print" onclick="window.encycloUI.printAward()" title="프린터 인쇄 또는 PDF로 저장">
+                    🖨️ 상장 인쇄하기
+                </button>
                 <button class="stage-action-btn" onclick="window.encycloUI.resetQuiz()">퀴즈 다시 풀기 🔄</button>
                 <button class="stage-action-btn" style="background: #CFD8DC; color: #37474F;" onclick="window.gameApp.closeModal('quizModal')">닫기</button>
             </div>
@@ -463,6 +479,296 @@ class EncyclopediaUI {
 
         if (window.soundFx) window.soundFx.playFanfare();
         if (window.effectMgr) window.effectMgr.createConfetti(window.innerWidth / 2, window.innerHeight / 3, 90);
+    }
+
+    // 상장을 완전한 독립형 단일 HTML 파일로 내려받기
+    saveAwardAsHtml() {
+        if (!this.currentAwardData) return;
+        const d = this.currentAwardData;
+        const safeSchool = d.school.replace(/[\\/:*?"<>|]/g, '_');
+        const safeName = d.studentName.replace(/[\\/:*?"<>|]/g, '_');
+        const filename = `쌀박사_으뜸상장_${safeSchool}_${safeName}.html`;
+
+        const htmlContent = `<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>상장 [쌀 박사 으뜸상] - ${d.studentName}</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700;900&family=Nanum+Gothic:wght@400;700;800&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #F5F0EB;
+    font-family: 'Noto Serif KR', 'Batang', 'Gungsuh', serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 30px 16px;
+    min-height: 100vh;
+    color: #212121;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .no-print-toolbar {
+    background: #FFFFFF;
+    padding: 12px 26px;
+    border-radius: 50px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+    display: flex;
+    gap: 14px;
+    margin-bottom: 26px;
+    font-family: 'Nanum Gothic', sans-serif;
+    align-items: center;
+  }
+  .toolbar-tip {
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: #2E7D32;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .tool-btn {
+    padding: 9px 20px;
+    border: none;
+    border-radius: 25px;
+    font-weight: 800;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn-print { background: #2E7D32; color: #FFF; }
+  .btn-print:hover { background: #1B5E20; transform: translateY(-1px); }
+  .btn-close { background: #ECEFF1; color: #455A64; }
+  .btn-close:hover { background: #CFD8DC; }
+
+  .award-wrapper {
+    width: 100%;
+    max-width: 680px;
+    padding: 14px;
+    background: #EFE7DA;
+    border-radius: 18px;
+    box-shadow: 0 12px 36px rgba(0,0,0,0.14);
+  }
+  .award-card {
+    background: #FFFEFA;
+    border: 7px double #D4AF37;
+    border-radius: 12px;
+    padding: 48px 42px 38px;
+    position: relative;
+    box-shadow: inset 0 0 25px rgba(212, 175, 55, 0.12);
+  }
+  .award-top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+  .award-serial {
+    font-size: 0.9rem;
+    color: #616161;
+    font-weight: 600;
+  }
+  .award-emblem {
+    font-size: 1.6rem;
+    letter-spacing: 4px;
+  }
+  .award-main-title {
+    font-size: 2.9rem;
+    font-weight: 900;
+    letter-spacing: 0.5em;
+    text-indent: 0.5em;
+    color: #1A1A1A;
+    text-align: center;
+    margin: 8px 0 4px;
+  }
+  .award-sub-title {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: #B78103;
+    text-align: center;
+    letter-spacing: 0.12em;
+    margin-bottom: 32px;
+  }
+  .award-recipient-info {
+    margin: 20px 10px 28px;
+    font-size: 1.18rem;
+    line-height: 2.1;
+  }
+  .award-recipient-info .info-line {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+  }
+  .award-recipient-info .info-label {
+    width: 82px;
+    font-weight: 800;
+    color: #424242;
+    letter-spacing: 0.35em;
+    flex-shrink: 0;
+  }
+  .award-recipient-info .info-sep {
+    font-weight: 800;
+    color: #424242;
+    margin-right: 8px;
+    flex-shrink: 0;
+  }
+  .award-recipient-info .info-val {
+    font-weight: 700;
+    color: #212121;
+  }
+  .award-recipient-info .student-highlight {
+    font-size: 1.45rem;
+    font-weight: 900;
+    color: #B71C1C;
+    text-decoration: underline;
+    text-underline-offset: 5px;
+  }
+  .award-body-text {
+    font-size: 1.1rem;
+    line-height: 2.1;
+    color: #212121;
+    text-align: center;
+    margin: 26px 0 38px;
+    padding: 0 10px;
+    word-break: keep-all;
+  }
+  .award-bottom-area {
+    margin-top: 30px;
+    text-align: center;
+  }
+  .award-date {
+    font-size: 1.05rem;
+    color: #424242;
+    margin-bottom: 22px;
+    font-weight: 600;
+  }
+  .award-issuer-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    position: relative;
+  }
+  .award-issuer-name {
+    font-size: 1.6rem;
+    font-weight: 900;
+    color: #212121;
+    letter-spacing: 0.1em;
+  }
+  .award-seal-stamp {
+    width: 60px;
+    height: 60px;
+    border: 4px solid #D32F2F;
+    color: #D32F2F;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.92rem;
+    font-weight: 900;
+    line-height: 1.15;
+    text-align: center;
+    letter-spacing: 1px;
+    transform: rotate(-6deg);
+    border-radius: 5px;
+    box-shadow: 0 0 5px rgba(211, 47, 47, 0.4);
+    background: #FFF8F8;
+  }
+
+  @media print {
+    body {
+      background: none;
+      padding: 0;
+    }
+    .no-print-toolbar {
+      display: none !important;
+    }
+    .award-wrapper {
+      max-width: 100%;
+      background: none;
+      box-shadow: none;
+      padding: 0;
+      border-radius: 0;
+    }
+    .award-card {
+      border: 6px double #D4AF37;
+      box-shadow: none;
+      padding: 40px 30px;
+      page-break-inside: avoid;
+    }
+    @page {
+      size: A4 portrait;
+      margin: 15mm;
+    }
+  }
+</style>
+</head>
+<body>
+  <div class="no-print-toolbar">
+    <span class="toolbar-tip">🌾 쌀 박사 상장이 HTML 파일로 저장되었습니다!</span>
+    <button class="tool-btn btn-print" onclick="window.print()">🖨️ 상장 인쇄 / PDF 저장</button>
+    <button class="tool-btn btn-close" onclick="window.close()">✕ 닫기</button>
+  </div>
+  <div class="award-wrapper">
+    <div class="award-card">
+      <div class="award-top-row">
+        <span class="award-serial">${d.serialNumber}</span>
+        <div class="award-emblem">🌾 🎖️ 🌾</div>
+      </div>
+      <h1 class="award-main-title">상&nbsp;&nbsp;&nbsp;&nbsp;장</h1>
+      <div class="award-sub-title">[ 쌀 박사 으뜸상 ]</div>
+      <div class="award-recipient-info">
+        <div class="info-line"><span class="info-label">소&nbsp;속</span><span class="info-sep">:</span><span class="info-val">${d.school} ${d.gradeClass}</span></div>
+        <div class="info-line"><span class="info-label">성&nbsp;명</span><span class="info-sep">:</span><span class="info-val student-highlight">${d.studentName}</span></div>
+      </div>
+      <div class="award-body-text">
+        위 어린이는 <strong>[벼의 한살이 및 쌀 가공 과정]</strong>에 대한<br>
+        쌀 박사 탐구 퀴즈 5문제를 모두 완벽하게 맞히고,<br>
+        농부의 땀방울과 친환경 생태 농업의 소중한 가치를<br>
+        훌륭히 이해하였으므로 이 상장을 수여합니다.
+      </div>
+      <div class="award-bottom-area">
+        <div class="award-date">${d.dateString}</div>
+        <div class="award-issuer-row">
+          <span class="award-issuer-name">${d.issuerSchool}</span>
+          <div class="award-seal-stamp">영양<br>박사</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+
+        if (window.downloadHtmlFile) {
+            window.downloadHtmlFile(filename, htmlContent);
+        } else {
+            const blob = new Blob(['\uFEFF' + htmlContent], { type: 'text/html;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        }
+
+        if (window.soundFx) window.soundFx.playPerfect();
+        if (window.gameApp) window.gameApp.showToast(`💾 [${d.studentName}] 상장이 HTML 파일로 저장되었습니다!`);
+    }
+
+    printAward() {
+        const modal = document.getElementById('quizModal');
+        if (modal) modal.classList.add('print-target-modal');
+        window.print();
+        setTimeout(() => {
+            if (modal) modal.classList.remove('print-target-modal');
+        }, 1000);
     }
 }
 

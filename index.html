@@ -253,6 +253,9 @@
                 <button class="stage-action-btn primary" onclick="window.gameApp.closeModal('recordModal'); window.gameApp.restartGame();">
                     🌾 새 벼농사 시작하고 기록 깨기! 🔄
                 </button>
+                <button class="stage-action-btn btn-records-html" onclick="window.gameApp.saveRecordsAsHtml()" title="실시간 명예의 전당 순위표를 HTML 문서로 저장">
+                    💾 기록표 HTML 저장
+                </button>
                 <button class="record-clear-btn" onclick="window.gameApp.clearAllRecords()" title="기록 초기화">
                     🗑️ 기록 초기화
                 </button>
@@ -263,7 +266,7 @@
     <!-- 모달 3: 꼬마 농부 수료증 (클리어 결과 & 기록 등록창) -->
     <div class="modal-overlay" id="certModal">
         <div class="modal-card cert-modal-card">
-            <div class="cert-frame">
+            <div class="cert-frame" id="printableCertFrame">
                 <div style="font-size: 3.2rem;">🎖️</div>
                 <h2 class="cert-title">꼬마 농부 명예 수료증</h2>
                 <p style="font-size: 0.95rem; line-height: 1.5; color: #4E342E; margin-bottom: 6px;">
@@ -302,7 +305,13 @@
                     <div id="certRegisterFeedback" class="cert-register-feedback" style="display: none;"></div>
                 </div>
 
-                <div style="display: flex; gap: 10px; justify-content: center; margin-top: 14px;">
+                <div class="cert-actions-row" style="display: flex; gap: 8px; justify-content: center; margin-top: 14px; flex-wrap: wrap;">
+                    <button class="stage-action-btn primary btn-html-save" onclick="window.gameApp.saveCertAsHtml()" title="수료증을 독립 HTML 파일로 내 컴퓨터에 저장">
+                        💾 HTML 파일로 저장
+                    </button>
+                    <button class="stage-action-btn btn-print" onclick="window.gameApp.printCert()" title="수료증 인쇄 또는 PDF 저장">
+                        🖨️ 수료증 인쇄하기
+                    </button>
                     <button class="stage-action-btn" onclick="window.gameApp.restartGame()">다시 도전하여 기록 깨기 🔄</button>
                     <button class="stage-action-btn" style="background: #CFD8DC; color: #37474F;" onclick="window.gameApp.closeModal('certModal')">닫기</button>
                 </div>
