@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌾 꼬마 농부의 황금벼 키우기 (벼의 한살이)</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <!-- 캔버스 효과 레이어 (꽃가루, 물방울, 사랑의 하트, 오리, 우렁이, 참새, 반짝이) -->
+    <canvas id="effectCanvas"></canvas>
+
+    <!-- 컴팩트 상단 헤더 -->
+    <!-- 컴팩트 상단 헤더 (중앙 모음 & 4대 그룹 시각적 구분) -->
+    <header class="game-header">
+        <div class="header-center-wrap">
+            <!-- 1. 타이틀 & 단계 안내 그룹 -->
+            <div class="header-group logo-area">
+                <span class="logo-icon">🌾</span>
+                <span class="logo-title">황금벼 키우기</span>
+                <span class="hud-pill stage" id="stagePillName">1단계: 볍씨</span>
+            </div>
+
+            <!-- 구분선 1 -->
+            <div class="header-divider" aria-hidden="true"></div>
+
+            <!-- 2. 게임 시간 / 계절 / 일수 / 진행 단계 (HUD 현황 그룹) -->
+            <div class="header-group hud-info">
+                <div class="hud-pill timer is-waiting" id="gameTimer" onclick="window.gameApp.startGame()" title="클릭 시 시간 측정 및 벼 키우기 시작">⏱️ 00:00 (대기)</div>
+                <div class="hud-pill" id="monthBadge">🌱 4월 봄날</div>
+                <div class="hud-pill" id="farmDay">15일째</div>
+                <div class="hud-pill" id="stageBadge">1 / 6 단계</div>
+            </div>
+
+            <!-- 구분선 2 -->
+            <div class="header-divider" aria-hidden="true"></div>
+
+            <!-- 3. 쌀 탐구백과 / 박사퀴즈 / 기록실 (학습 & 활동 메뉴 그룹) -->
+            <div class="header-group learning-group">
+                <button class="nav-btn" onclick="window.gameApp.openModal('encyclopediaModal')" title="쌀 탐구백과">📚 쌀 탐구백과</button>
+                <button class="nav-btn highlight-quiz-btn" onclick="window.gameApp.openModal('quizModal')" title="도전! 쌀 박사 퀴즈">💡 쌀 박사퀴즈</button>
+                <button class="nav-btn" onclick="window.gameApp.openModal('recordModal')" title="나의 최고 기록">🏆 기록</button>
+            </div>
+
+            <!-- 구분선 3 -->
+            <div class="header-divider" aria-hidden="true"></div>
+
+            <!-- 4. 가을BGM / 효과음 (사운드 환경 설정 그룹) -->
+            <div class="header-group audio-group">
+                <button class="nav-btn bgm-btn active" id="btnBgmToggle" title="가을 귀뚜라미·메뚜기 자연 배경음">🎵 가을BGM 켜짐</button>
+                <button class="nav-btn" id="btnSoundToggle" title="효과음 켜기/끄기">🔊 효과음</button>
+            </div>
+
+            <!-- 구분선 4 -->
+            <div class="header-divider" aria-hidden="true"></div>
+
+            <!-- 5. 전자칠판 & 전체화면 (교실 수업 디스플레이 모드 그룹) -->
+            <div class="header-group board-group">
+                <button class="nav-btn smartboard-btn" id="btnSmartboardToggle" onclick="window.gameApp.toggleSmartboardMode()" title="교실 대화면 전자칠판(스마트보드) 터치 특화 모드 전환">🖥️ 전자칠판 모드</button>
+                <button class="nav-btn fullscreen-btn" id="btnFullscreenToggle" onclick="window.gameApp.toggleFullscreen()" title="전체화면 켜기/끄기">⛶ 전체화면</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 상단 얇은 진행도 바 -->
+    <div class="global-progress-bar-wrap">
+        <div class="global-progress-fill" id="overallProgressBar"></div>
+    </div>
+
+    <!-- 메인 게임 뷰포트 (좌측 게이지 타워 + 중앙 벼 농장 씬) -->
+    <main class="main-game-viewport" id="mainStageCanvasArea">
+        <!-- story_mode.js에서 동적으로 렌더링됩니다 -->
+    </main>
+
+    <!-- 하단 액션 도구바: 1단계(벼의 한살이 8대 도구) & 2단계(벼알 가공 6대 도구) -->
+    <footer class="bottom-action-bar" id="bottomActionBar">
+        <!-- 1단계: 벼의 한살이 도구 (물주기, 햇빛, 사랑의쓰담, 농부의손길, 오리, 우렁이, 허수아비, 물떼기) -->
+        <div class="action-bar-group" id="toolbarPart1">
+            <button class="action-tool-btn tool-water" onclick="window.gameApp.handleWishAction('water')" title="물주기">
+                <span class="tool-emoji">💧</span>
+                <span class="tool-label">물주기</span>
+            </button>
+            <button class="action-tool-btn tool-sun" onclick="window.gameApp.handleWishAction('sun')" title="햇빛쬐기">
+                <span class="tool-emoji">☀️</span>
+                <span class="tool-label">햇빛쬐기</span>
+            </button>
+            <button class="action-tool-btn tool-love" onclick="window.gameApp.handleWishAction('love')" title="사랑의 쓰담쓰담">
+                <span class="tool-emoji">💖</span>
+                <span class="tool-label">사랑의쓰담</span>
+            </button>
+            <button class="action-tool-btn tool-farmer" onclick="window.gameApp.handleWishAction('farmer')" title="농부의 손길 (잡초 뽑기 & 흙 북돋우기)">
+                <span class="tool-emoji">🤲</span>
+                <span class="tool-label">농부의손길</span>
+            </button>
+            <button class="action-tool-btn tool-duck" onclick="window.gameApp.handleWishAction('duck')" title="오리농법">
+                <span class="tool-emoji">🦆</span>
+                <span class="tool-label">오리농법</span>
+            </button>
+            <button class="action-tool-btn tool-snail" onclick="window.gameApp.handleWishAction('snail')" title="우렁이농법">
+                <span class="tool-emoji">🐌</span>
+                <span class="tool-label">우렁이농법</span>
+            </button>
+            <button class="action-tool-btn tool-scarecrow" onclick="window.gameApp.handleWishAction('scarecrow')" title="허수아비">
+                <span class="tool-emoji">🧑‍🌾</span>
+                <span class="tool-label">허수아비</span>
+            </button>
+            <button class="action-tool-btn tool-drain" onclick="window.gameApp.handleWishAction('drain')" title="중간 물 떼기">
+                <span class="tool-emoji">🚪</span>
+                <span class="tool-label">물 떼기</span>
+            </button>
+        </div>
+
+        <!-- 2단계: 벼알의 6단계 가공 도구 (내용을 읽고 알맞은 도구를 찾도록 섞어서 배치) -->
+        <div class="action-bar-group" id="toolbarPart2" style="display: none;">
+            <button class="action-tool-btn tool-mill" onclick="window.gameApp.handleWishAction('mill')" title="도정 (왕겨➔현미, 쌀겨➔백미)">
+                <span class="tool-emoji">⚙️</span>
+                <span class="tool-label">도정</span>
+            </button>
+            <button class="action-tool-btn tool-thresh" onclick="window.gameApp.handleWishAction('thresh')" title="탈곡 (줄기와 낟알 분리)">
+                <span class="tool-emoji">🚜</span>
+                <span class="tool-label">탈곡</span>
+            </button>
+            <button class="action-tool-btn tool-pack" onclick="window.gameApp.handleWishAction('pack')" title="포장 (햅쌀 포대 & 쌀밥 짓기)">
+                <span class="tool-emoji">📦</span>
+                <span class="tool-label">포장</span>
+            </button>
+            <button class="action-tool-btn tool-dry" onclick="window.gameApp.handleWishAction('dry')" title="건조 (수분 24%➔15% 안전 건조)">
+                <span class="tool-emoji">♨️</span>
+                <span class="tool-label">건조</span>
+            </button>
+            <button class="action-tool-btn tool-sort" onclick="window.gameApp.handleWishAction('sort')" title="선별 (색채선별기 특등미 분류)">
+                <span class="tool-emoji">🔍</span>
+                <span class="tool-label">선별</span>
+            </button>
+            <button class="action-tool-btn tool-store" onclick="window.gameApp.handleWishAction('store')" title="저장 (사일로 저온 신선 보관)">
+                <span class="tool-emoji">🏭</span>
+                <span class="tool-label">저장</span>
+            </button>
+        </div>
+    </footer>
+
+    <!-- 모달 0: 벼 키우기 시작 대기 모달 (시작 버튼을 눌러야 타이머 측정 작동) -->
+    <div class="modal-overlay start-modal" id="gameStartModal" style="display: flex;">
+        <div class="modal-card start-modal-card">
+            <div class="start-icon-wrap">
+                <span class="start-hero-icon">🌾</span>
+                <span class="start-sub-icon">⏱️</span>
+            </div>
+            <h2 class="start-modal-title">꼬마 농부의 황금벼 키우기</h2>
+            <p class="start-modal-desc">
+                사랑과 정성으로 벼를 키우고, 6단계 가공(탈곡·도정 등)을 거쳐<br>
+                김이 모락모락 윤기 나는 <strong>따끈한 가마솥 쌀밥</strong>을 완성해 보세요!
+            </p>
+
+            <div class="start-timer-notice">
+                <span class="notice-icon">⏱️</span>
+                <span>아래 <strong>[시작하기]</strong> 버튼을 누르면 <strong>타이머(시간 측정)</strong>가 작동해요!</span>
+            </div>
+
+            <div class="start-profile-preview">
+                <span class="farmer-tag">🧑‍🌾 도전자:</span>
+                <span class="farmer-name" id="startProfileDisplay">햇살초등학교 3학년 1반 김벼리</span>
+                <button class="start-profile-edit-btn" onclick="window.gameApp.openProfileEditFromStart()" title="학교/이름 변경">✏️ 변경</button>
+            </div>
+
+            <button class="start-action-btn" onclick="window.gameApp.startGame()">
+                <span class="btn-play-icon">▶</span>
+                <span>벼 키우기 시작! (시간 측정 ON)</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 모달 1: 쌀 탐구백과 -->
+    <div class="modal-overlay" id="encyclopediaModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h2>📚 쌀 탐구백과</h2>
+                <button class="close-btn" onclick="window.gameApp.closeModal('encyclopediaModal')">✕</button>
+            </div>
+            <div id="encyclopediaContent"></div>
+        </div>
+    </div>
+
+    <!-- 모달: 도전! 쌀 박사 퀴즈 & 상장 발급 -->
+    <div class="modal-overlay" id="quizModal">
+        <div class="modal-card quiz-modal-card">
+            <div class="modal-header">
+                <h2>💡 도전! 쌀 박사 퀴즈</h2>
+                <button class="close-btn" onclick="window.gameApp.closeModal('quizModal')">✕</button>
+            </div>
+            <div id="quizContent"></div>
+        </div>
+    </div>
+
+    <!-- 모달 2: 명예의 전당 (개인 기록 및 지속적 갱신 랭킹) -->
+    <div class="modal-overlay" id="recordModal">
+        <div class="modal-card record-modal-card">
+            <div class="modal-header">
+                <h2>🏆 꼬마 농부 명예의 전당 (기록 순위)</h2>
+                <button class="close-btn" onclick="window.gameApp.closeModal('recordModal')">✕</button>
+            </div>
+
+            <!-- 현재 농부 프로필 카드 (학교, 학년, 이름 상시 갱신) -->
+            <div class="farmer-profile-card">
+                <div class="profile-card-header">
+                    <span class="profile-avatar">🧑‍🌾</span>
+                    <div class="profile-text-wrap">
+                        <div class="profile-title">현재 꼬마 농부</div>
+                        <div class="profile-name-tag" id="currentProfileTag">햇살초 3학년 1반 김벼리</div>
+                    </div>
+                    <button class="profile-edit-btn" onclick="window.gameApp.toggleProfileEdit()" title="정보 수정">✏️ 정보 수정</button>
+                </div>
+
+                <!-- 인라인 프로필 수정 폼 -->
+                <div class="profile-edit-form" id="profileEditForm" style="display: none;">
+                    <div class="profile-edit-inputs">
+                        <input type="text" id="profSchoolInput" placeholder="학교명 (예: 햇살초등학교)" maxlength="16">
+                        <input type="text" id="profGradeInput" placeholder="학년·반 (예: 3학년 1반)" maxlength="12">
+                        <input type="text" id="profNameInput" placeholder="이름 (예: 김벼리)" maxlength="10">
+                        <button class="stage-action-btn primary profile-save-btn" onclick="window.gameApp.saveProfileFromModal()">저장</button>
+                    </div>
+                </div>
+
+                <!-- 나의 최고 기록 & 총 수확 횟수 배지 -->
+                <div class="profile-stats-row">
+                    <div class="profile-stat-box">
+                        <span class="stat-label">⚡ 나의 최고 기록</span>
+                        <span class="stat-val" id="myBestTimeText">-</span>
+                    </div>
+                    <div class="profile-stat-box">
+                        <span class="stat-label">🌾 총 벼농사 수확</span>
+                        <span class="stat-val" id="myAttemptsText">0회</span>
+                    </div>
+                    <div class="profile-stat-box">
+                        <span class="stat-label">🏅 보유 최고 메달</span>
+                        <span class="stat-val" id="myBestMedalText">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="record-list-header">
+                <h3>👑 실시간 명예의 전당 순위표</h3>
+                <span class="record-tip">⏱️ 빠른 시간 순으로 자동 업데이트돼요!</span>
+            </div>
+
+            <div id="recordList" class="record-list-container"></div>
+
+            <div class="record-modal-footer">
+                <button class="stage-action-btn primary" onclick="window.gameApp.closeModal('recordModal'); window.gameApp.restartGame();">
+                    🌾 새 벼농사 시작하고 기록 깨기! 🔄
+                </button>
+                <button class="record-clear-btn" onclick="window.gameApp.clearAllRecords()" title="기록 초기화">
+                    🗑️ 기록 초기화
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 모달 3: 꼬마 농부 수료증 (클리어 결과 & 기록 등록창) -->
+    <div class="modal-overlay" id="certModal">
+        <div class="modal-card cert-modal-card">
+            <div class="cert-frame">
+                <div style="font-size: 3.2rem;">🎖️</div>
+                <h2 class="cert-title">꼬마 농부 명예 수료증</h2>
+                <p style="font-size: 0.95rem; line-height: 1.5; color: #4E342E; margin-bottom: 6px;">
+                    위 어린이는 벼의 요구사항을 귀 기울여 들으며<br>
+                    사랑과 정성으로 벼를 가꾸고, 건조와 도정(왕겨➔현미➔백미)을 거쳐<br>
+                    맛있는 가마솥 쌀밥을 훌륭히 완성하였으므로<br>
+                    <strong>[자랑스러운 꼬마 농부]</strong>로 인정합니다!
+                </p>
+
+                <div class="cert-record-box">
+                    <div style="font-size: 1.05rem; font-weight: 700; color: #E65100;" id="certMedalText">🥇 금벼 메달</div>
+                    <div style="font-size: 1.85rem; font-weight: 900; color: #2E7D32; margin: 4px 0;" id="certTimeText">01분 05초</div>
+                    <div style="font-size: 0.85rem; color: #757575;" id="certBonusText">성실한 사랑으로 벼를 가꾸었어요!</div>
+                </div>
+
+                <!-- 학교, 학년, 이름 입력 폼 (지속적 기록 갱신) -->
+                <div class="cert-profile-input-box">
+                    <div class="cert-input-title">🌾 꼬마 농부 정보 입력 (명예의 전당 기록 갱신)</div>
+                    <div class="cert-input-grid">
+                        <div class="cert-input-field">
+                            <label for="certUserSchool">🏫 학교</label>
+                            <input type="text" id="certUserSchool" placeholder="예: 햇살초등학교" maxlength="16">
+                        </div>
+                        <div class="cert-input-field">
+                            <label for="certUserGrade">🎒 학년/반</label>
+                            <input type="text" id="certUserGrade" placeholder="예: 3학년 1반" maxlength="12">
+                        </div>
+                        <div class="cert-input-field">
+                            <label for="certUserName">👤 이름</label>
+                            <input type="text" id="certUserName" placeholder="예: 김벼리" maxlength="10">
+                        </div>
+                    </div>
+                    <button class="stage-action-btn primary register-record-btn" onclick="window.gameApp.registerCurrentRecord()">
+                        🏆 명예의 전당에 내 기록 등록 / 갱신하기!
+                    </button>
+                    <div id="certRegisterFeedback" class="cert-register-feedback" style="display: none;"></div>
+                </div>
+
+                <div style="display: flex; gap: 10px; justify-content: center; margin-top: 14px;">
+                    <button class="stage-action-btn" onclick="window.gameApp.restartGame()">다시 도전하여 기록 깨기 🔄</button>
+                    <button class="stage-action-btn" style="background: #CFD8DC; color: #37474F;" onclick="window.gameApp.closeModal('certModal')">닫기</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 스크립트 로드 -->
+    <script src="js/audio.js"></script>
+    <script src="js/effects.js"></script>
+    <script src="js/encyclopedia.js"></script>
+    <script src="js/story_mode.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
